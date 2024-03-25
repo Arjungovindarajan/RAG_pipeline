@@ -50,7 +50,7 @@ def trigger_sql_query():
 def send_email():
     sender_email = "arjunviki44@gmail.com"
     receiver_email = "arjungovindarajan44@gmail.com"
-    password = "kxeu tsca vhlc wzsn"
+    password = "Arjun@123"
     
     message = MIMEMultipart("alternative")
     message["From"] = sender_email
@@ -81,8 +81,8 @@ def webhook():
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
 
-def parse_and_insert_data():
 
+def parse_and_insert_data():
     try:
         # Connect to MySQL database
         connection = mysql.connector.connect(
@@ -94,30 +94,32 @@ def parse_and_insert_data():
 
         # Create cursor
         cursor = connection.cursor()
-
         # Execute dummy SQL query
-        cursor.execute('''CREATE TABLE if not exists mytable (Id INT, Employee_name VARCHAR(50))''')
+        cursor.execute("""CREATE TABLE IF NOT EXISTS mytable (Id INT PRIMARY KEY AUTO_INCREMENT,
+                        Employee_name VARCHAR(50) NOT NULL)""")
+        # reb = cursor.fetchall()
+        # print(reb)
 
         data_to_insert = [('1', 'Arjun'),
-                          ('2', 'Vignesh'),
-                          ('3', 'Vijay')]
+                            ('2', 'Vignesh'),
+                            ('3', 'Vijay')]
 
-        cursor.executemany('INSERT INTO mytable VALUES (?, ?)', data_to_insert)
-        # Fetch result
+        cursor.executemany('INSERT IGNORE INTO mytable (Id, Employee_name) VALUES (%s, %s)', data_to_insert)
+        connection.commit()
+        cursor.execute("SELECT * FROM mytable")
         result = cursor.fetchall()
-        # print(result)
-        # Close cursor and connection
+        print(result)
         cursor.close()
         connection.close()
 
         return result
-
+    
     except mysql.connector.Error as error:
         print("Error executing SQL query:", error)
         return None
-
+    
 def handle_error(exception):
     print(f"An error occurred: {exception}")
 
-pipeline = RAGPipeline(trigger_sql_query, [send_email, webhook, parse_and_insert_data], handle_error)
+pipeline = RAGPipeline(trigger_sql_query, [send_email, parse_and_insert_data], handle_error)
 pipeline.execute()
